@@ -23,6 +23,7 @@
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/encoding-japanese/1.0.30/encoding.min.js"></script>
 </head>
 <body>
     <h1>Tool Check Header CSV File</h1>
@@ -56,7 +57,8 @@
                 });
 
                 const outputCSV = createCSV(sortedData, headersFile2);
-                const blob = new Blob([outputCSV], { type: 'text/csv' });
+                const shiftJISCSV = convertToShiftJIS(outputCSV);
+                const blob = new Blob([shiftJISCSV], { type: 'text/csv' });
                 const url = URL.createObjectURL(blob);
 
                 const downloadLink = document.getElementById('downloadLink');
@@ -107,6 +109,12 @@
                 rows.push(values.join(','));
             });
             return rows.join('\n');
+        }
+
+        function convertToShiftJIS(csv) {
+            const unicodeArray = Encoding.stringToCode(csv);
+            const sjisArray = Encoding.convert(unicodeArray, 'SJIS', 'UNICODE');
+            return new Uint8Array(sjisArray);
         }
     </script>
 </body>
