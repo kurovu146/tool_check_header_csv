@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV File Processor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        input[type="file"] {
+            display: block;
+            margin-bottom: 10px;
+        }
+        button {
+            display: block;
+            margin-top: 10px;
+        }
+        a {
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+    <h1>Upload CSV Files</h1>
+    <input type="file" id="file1" accept=".csv">
+    <input type="file" id="file2" accept=".csv">
+    <button id="processBtn">Process Files</button>
+    <a id="downloadLink" style="display: none;">Download Output CSV</a>
+
+    <script>
+        document.getElementById('processBtn').addEventListener('click', async () => {
+            const file1 = document.getElementById('file1').files[0];
+            const file2 = document.getElementById('file2').files[0];
+
+            if (!file1 || !file2) {
+                alert('Please upload both files.');
+                return;
+            }
+
+            try {
+                const headersFile2 = await getHeaders(file2);
+                const file1Data = await parseCSV(file1);
+
+                const sortedData = file1Data.map(row => {
+                    const sortedRow = {};
+                    headersFile2.forEach(header => {
+                        sortedRow[header] = row.hasOwnProperty(header) ? row[header] : '';
+                    });
+                    return sortedRow;
+                });
+
+                const outputCSV = createCSV(sortedData, headersFile2);
+                const blob = new Blob([outputCSV], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+
+                const downloadLink = document.getElementById('downloadLink');
+                downloadLink.href = url;
+                downloadLink.download = 'output.csv';
+                downloadLink.style.display = 'block';
+            } catch (error) {
+                console.error('Error processing files:', error);
+                alert('An error occurred while processing the files. Please check the console for more details.'+ error);
+            }
+        });
+
+        async function getHeaders(file) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(file, {
+                    complete: (results) => {
+                        resolve(results.data[0]); // Lấy header từ dòng đầu tiên
+                    },
+                    error: (error) => reject(error),
+                });
+            });
+        }
+
+        async function parseCSV(file) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true, // Bỏ qua các dòng trống
+                    complete: (results) => {
+                        resolve(results.data);
+                    },
+                    error: (error) => reject(error),
+                });
+            });
+        }
+
+        function createCSV(data, headers) {
+            const rows = [headers.map(header => `"${header.replace(/"/g, '""')}"`).join(',')];
+            data.forEach(row => {
+                const values = headers.map(header => {
+                    const value = row.hasOwnProperty(header) ? row[header] : '';
+                    return `"${value.replace(/"/g, '""')}"`; // Escape double quotes
+                });
+                rows.push(values.join(','));
+            });
+            return rows.join('\n');
+        }
+    </script>
+</body>
+</html>
