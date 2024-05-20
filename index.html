@@ -48,7 +48,9 @@
                 const sortedData = file1Data.map(row => {
                     const sortedRow = {};
                     headersFile2.forEach(header => {
-                        sortedRow[header] = row.hasOwnProperty(header) ? row[header] : '';
+                        if (row.hasOwnProperty(header) && row[header] !== 'NULL') {
+                            sortedRow[header] = row[header];
+                        }
                     });
                     return sortedRow;
                 });
@@ -95,8 +97,12 @@
             const rows = [headers.map(header => `"${header.replace(/"/g, '""')}"`).join(',')];
             data.forEach(row => {
                 const values = headers.map(header => {
-                    const value = row.hasOwnProperty(header) ? row[header] : '';
-                    return `"${value.replace(/"/g, '""')}"`; // Escape double quotes
+                    if (row.hasOwnProperty(header) && row[header] !== '') {
+                        const value = row[header];
+                        return `"${value.replace(/"/g, '""')}"`; // Escape double quotes in values
+                    } else {
+                        return '';
+                    }
                 });
                 rows.push(values.join(','));
             });
